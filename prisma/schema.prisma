@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String              @id @default(uuid())
+  name              String
+  username          String              @unique
+  birth             DateTime
+  email             String              @unique
+  document          String              @unique
+  freelancer        Boolean
+  active            Boolean             @default(true)
+  photo             Bytes?              @db.ByteA
+  FreelancerService FreelancerService[]
+  Project           Project[]
+  ProjectProposal   ProjectProposal[]
+  Report            Report[]
+  Rating            Rating[]
+  RatedUser         Rating[]            @relation(name: "RatedUser")
+
+  @@map("users")
+}
+
+model Service {
+  id                String              @id @default(dbgenerated())
+  name              String
+  FreelancerService FreelancerService[]
+  ProjectService    ProjectService[]
+  ProjectProposal   ProjectProposal[]
+
+  @@map("services")
+}
+
+model FreelancerService {
+  id        String  @id @default(uuid())
+  idService String
+  Service   Service @relation(fields: [idService], references: [id])
+  idUser    String
+  User      User    @relation(fields: [idUser], references: [id])
+
+  @@map("freelancer_services")
+}
+
+model ProjectType {
+  id       String    @id @default(uuid())
+  name     String
+  projects Project[]
+
+  @@map("project_types")
+}
+
+model ProjectCity {
+  id       String    @id @default(uuid())
+  name     String
+  projects Project[]
+
+  @@map("project_cities")
+}
+
+model Project {
+  id              String            @id @default(uuid())
+  idUser          String
+  User            User              @relation(fields: [idUser], references: [id])
+  idProjectType   String
+  ProjectType     ProjectType       @relation(fields: [idProjectType], references: [id])
+  idProjectCity   String
+  ProjectCity     ProjectCity       @relation(fields: [idProjectCity], references: [id])
+  title           String
+  description     String
+  startDate       DateTime
+  endDate         DateTime
+  createdAt       DateTime          @default(now())
+  ProjectService  ProjectService[]
+  ProjectProposal ProjectProposal[]
+  Report          Report[]
+
+  @@map("projects")
+}
+
+model ProjectService {
+  id        String  @id @default(uuid())
+  idService String
+  Service   Service @relation(fields: [idService], references: [id])
+  idProject String
+  Project   Project @relation(fields: [idProject], references: [id])
+
+  @@map("project_services")
+}
+
+model ProjectProposal {
+  id        String   @id @default(uuid())
+  idProject String
+  Project   Project  @relation(fields: [idProject], references: [id])
+  idUser    String
+  User      User     @relation(fields: [idUser], references: [id])
+  idService String
+  Service   Service  @relation(fields: [idService], references: [id])
+  price     Float
+  message   String
+  contact   String
+  status    String
+  createdAt DateTime @default(now())
+
+  @@map("project_proposals")
+}
+
+model Rating {
+  id          String   @id @default(uuid())
+  idUser      String
+  User        User     @relation(fields: [idUser], references: [id])
+  idRatedUser String
+  RatedUser   User     @relation(name: "RatedUser", fields: [idRatedUser], references: [id])
+  rating      Int
+  comment     String
+  createdAt   DateTime @default(now())
+
+  @@map("ratings")
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  idUser    String
+  User      User     @relation(fields: [idUser], references: [id])
+  idProject String
+  Project   Project  @relation(fields: [idProject], references: [id])
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("reports")
+}
