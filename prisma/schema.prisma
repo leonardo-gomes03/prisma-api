@@ -28,7 +28,7 @@ model User {
 }
 
 model Service {
-  id                String              @id @default(dbgenerated())
+  id                String              @id @default(uuid())
   name              String
   FreelancerService FreelancerService[]
   ProjectService    ProjectService[]
@@ -55,12 +55,12 @@ model ProjectType {
   @@map("project_types")
 }
 
-model ProjectCity {
+model City {
   id       String    @id @default(uuid())
   name     String
   projects Project[]
 
-  @@map("project_cities")
+  @@map("cities")
 }
 
 model Project {
@@ -69,8 +69,8 @@ model Project {
   User            User              @relation(fields: [idUser], references: [id])
   idProjectType   String
   ProjectType     ProjectType       @relation(fields: [idProjectType], references: [id])
-  idProjectCity   String
-  ProjectCity     ProjectCity       @relation(fields: [idProjectCity], references: [id])
+  idCity          String
+  City            City              @relation(fields: [idCity], references: [id])
   title           String
   description     String
   startDate       DateTime

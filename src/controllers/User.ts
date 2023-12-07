@@ -29,8 +29,39 @@ async function VerifyUsername(username: string) {
   return !!user;
 }
 
+async function VerifyDocument(document: string) {
+  const user = await prismaClient.user.findFirst({
+    where: {
+      document: document,
+    },
+  });
+
+  return !!user;
+}
+
 async function ListAll(request: Request, response: Response) {
-  const users = await prismaClient.user.findMany({ where: { active: true } });
+  const users = await prismaClient.user.findMany({
+    where: { active: true },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      document: true,
+      birth: true,
+      photo: true,
+      freelancer: true,
+      FreelancerService: {
+        select: {
+          Service: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
   return response.json(users);
 }
@@ -49,22 +80,26 @@ async function Find(request: Request, response: Response) {
 }
 
 async function Create(request: Request, response: Response) {
-  const { document, birth, email, freelancer, name, username, id, photo } =
+  const { document, birth, email, freelancer, name, username, photo } =
     request.body;
 
-  // Verify Email
-  const emailExists = await VerifyEmail(email);
+  Promise.all([
+    VerifyEmail(email),
+    VerifyUsername(username),
+    VerifyDocument(document),
+  ]).then((values) => {
+    if (values[0]) {
+      return response.status(422).json({ error: "Email already exists" });
+    }
 
-  if (emailExists) {
-    return response.status(422).json({ error: "Email already exists" });
-  }
+    if (values[1]) {
+      return response.status(422).json({ error: "Username already exists" });
+    }
 
-  // Verify Username
-  const usernameExists = await VerifyUsername(username);
-
-  if (usernameExists) {
-    return response.status(422).json({ error: "Username already exists" });
-  }
+    if (values[2]) {
+      return response.status(422).json({ error: "Document already exists" });
+    }
+  });
 
   const user = await prismaClient.user.create({
     data: {
@@ -74,7 +109,6 @@ async function Create(request: Request, response: Response) {
       freelancer,
       name,
       username,
-      id,
       photo,
     },
   });
